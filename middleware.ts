@@ -22,43 +22,14 @@ const publicRoutes = ['/', '/about', '/contact']
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
-  // Get authentication token from cookies
-  const accessToken = request.cookies.get('accessToken')?.value
-  const refreshToken = request.cookies.get('refreshToken')?.value
-  const isAuthenticated = !!(accessToken || refreshToken)
-
-  // Check if the current path is protected
-  const isProtectedRoute = protectedRoutes.some(route => 
-    pathname.startsWith(route)
-  )
+  // NOTE: We can't check backend cookies here because they're on a different domain
+  // Backend cookies are httpOnly and set on the API domain (backend.vercel.app)
+  // Middleware runs on the frontend domain (frontend.vercel.app)
+  // 
+  // Authentication is handled client-side by ProtectedRoute component
+  // which calls the /api/auth/session endpoint to verify the user
   
-  // Check if the current path is an auth page
-  const isAuthRoute = authRoutes.some(route => 
-    pathname.startsWith(route)
-  )
-
-  // Redirect to login if accessing protected route without authentication
-  if (isProtectedRoute && !isAuthenticated) {
-    const loginUrl = new URL('/login', request.url)
-    
-    // Save the original path to redirect back after login
-    loginUrl.searchParams.set('from', pathname)
-    
-    const response = NextResponse.redirect(loginUrl)
-    
-    // Optional: Clear any stale cookies
-    response.cookies.delete('accessToken')
-    response.cookies.delete('refreshToken')
-    
-    return response
-  }
-
-  // Redirect to dashboard if accessing auth pages while authenticated
-  if (isAuthRoute && isAuthenticated) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
-  }
-
-  // Allow the request to continue
+  // Just pass through all requests - let client-side handle auth
   return NextResponse.next()
 }
 

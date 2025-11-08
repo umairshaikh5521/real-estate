@@ -64,9 +64,8 @@ export function useSignup() {
         sessionStorage.removeItem("redirectAfterLogin");
       }
       
-      // Use window.location for hard redirect to ensure cookies are sent
-      // This is critical for production where middleware needs to read cookies
-      window.location.href = redirectPath;
+      // Client-side navigation - ProtectedRoute component handles auth checks
+      router.push(redirectPath);
     },
     onError: (error: any) => {
       const message =
@@ -116,9 +115,8 @@ export function useLogin() {
         sessionStorage.removeItem("redirectAfterLogin");
       }
       
-      // Use window.location for hard redirect to ensure cookies are sent
-      // This is critical for production where middleware needs to read cookies
-      window.location.href = redirectPath;
+      // Client-side navigation - ProtectedRoute component handles auth checks
+      router.push(redirectPath);
     },
     onError: (error: any) => {
       const message = error?.message || "Failed to login. Please try again.";
