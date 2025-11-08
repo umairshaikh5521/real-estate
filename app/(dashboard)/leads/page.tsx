@@ -1,138 +1,161 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { StatCard } from "@/components/ui/stat-card";
-import {
-  DownloadIcon,
-  Plus,
-  Handshake,
-  Users,
-  UserPlus,
-  Flame,
-} from "lucide-react";
-import { columns } from "./columns";
-import { DataTable } from "@/components/data-table";
-import { mockLeadsData } from "./data";
+/**
+ * Leads Page
+ * Shows leads assigned to the current channel partner
+ */
 
-export default function Page() {
-  const statsData = [
-    {
-      title: "Total Leads",
-      value: "112",
-      icon: Users,
-      trend: {
-        value: "20.0%",
-        color: "green" as const,
-      },
-      comparison: "vs 23 last period",
-    },
-    {
-      title: "New Leads",
-      value: "12",
-      icon: UserPlus,
-      trend: {
-        value: "20.0%",
-        color: "green" as const,
-      },
-      comparison: "vs 5 last period",
-    },
-    {
-      title: "Hot Leads",
-      value: "15",
-      icon: Flame,
-      trend: {
-        value: "20.0%",
-        color: "green" as const,
-      },
-      comparison: "vs 23 last period",
-    },
-    {
-      title: "Converted",
-      value: "14",
-      icon: Handshake,
-      trend: {
-        value: "20.0%",
-        color: "green" as const,
-      },
-      comparison: "vs 3 last period",
-    },
-  ];
+import { Loader2 } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useLeads } from "@/hooks/use-leads";
+import { ReferralCodeCard } from "@/components/referral-code-card";
+import { useSession } from "@/hooks/use-auth";
+import { UserRole } from "@/types/auth";
+
+export default function LeadsPage() {
+  const { data: leadsData, isLoading, error } = useLeads();
+  const { data: sessionData } = useSession();
+  
+  const user = sessionData?.data?.user;
+  const isChannelPartner = user?.role === UserRole.CHANNEL_PARTNER;
+  const leads = leadsData?.data?.leads || [];
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-destructive">Error</CardTitle>
+            <CardDescription>Failed to load leads</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div className="">
-      <div className="flex items-end justify-between mb-7">
-        <div>
-          <h1 className="pageTitle">Leads Management</h1>
-          <p className="text-muted-foreground">
-            {`Track and manage your sales leads`}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-4 ">
-          <Button variant="default" size={"lg"} className="ml-auto">
-            <DownloadIcon className="size-4" />
-            Export Data
-          </Button>
-          <Button variant="accent" size={"lg"} className="ml-auto">
-            <Plus className="size-4" />
-            Add Lead
-          </Button>
-        </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">My Leads</h1>
+        <p className="text-muted-foreground mt-1">
+          {isChannelPartner 
+            ? "Leads assigned to you through your referral code" 
+            : "All leads in the system"}
+        </p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="flex flex-1 flex-col gap-8 ">
-        <div className="grid auto-rows-min gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {statsData.map((stat, index) => (
-            <StatCard
-              key={index}
-              title={stat.title}
-              value={stat.value}
-              icon={stat.icon}
-              trend={stat.trend}
-              comparison={stat.comparison}
-            />
-          ))}
-        </div>
+      {/* Referral Code Card for Channel Partners */}
+      {isChannelPartner && <ReferralCodeCard />}
 
-        {/* Data Table */}
-        <DataTable
-          columns={columns}
-          data={mockLeadsData}
-          searchableColumns={[
-            {
-              id: "name",
-              title: "Lead Name",
-            },
-          ]}
-          filterableColumns={[
-            {
-              id: "status",
-              title: "Status",
-              options: [
-                { label: "New", value: "New" },
-                { label: "Contacted", value: "Contacted" },
-                { label: "Site Visit", value: "Site Visit" },
-                { label: "Negotiation", value: "Negotiation" },
-                { label: "Booked", value: "Booked" },
-                { label: "Lost", value: "Lost" },
-              ],
-            },
-            {
-              id: "leadSource",
-              title: "Lead Source",
-              options: [
-                { label: "Facebook", value: "Facebook" },
-                { label: "Expo", value: "Expo" },
-                { label: "Walkin", value: "Walkin" },
-                { label: "Referral", value: "Referral" },
-                { label: "Website", value: "Website" },
-                { label: "Campaign", value: "Campaign" },
-              ],
-            },
-          ]}
-        />
+      {/* Leads Stats */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardDescription>Total Leads</CardDescription>
+            <CardTitle className="text-3xl">{leads.length}</CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardDescription>New</CardDescription>
+            <CardTitle className="text-3xl">
+              {leads.filter((l) => l.status === "new").length}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardDescription>Contacted</CardDescription>
+            <CardTitle className="text-3xl">
+              {leads.filter((l) => l.status === "contacted").length}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardDescription>Qualified</CardDescription>
+            <CardTitle className="text-3xl">
+              {leads.filter((l) => l.status === "qualified").length}
+            </CardTitle>
+          </CardHeader>
+        </Card>
       </div>
+
+      {/* Leads List */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Leads</CardTitle>
+          <CardDescription>
+            {leads.length === 0
+              ? "No leads yet. Share your referral code to get leads!"
+              : `You have ${leads.length} lead${leads.length !== 1 ? "s" : ""}`}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {leads.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground mb-4">
+                No leads found. Start sharing your referral code!
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {leads.map((lead) => (
+                <div
+                  key={lead.id}
+                  className="flex items-start justify-between border rounded-lg p-4 hover:bg-accent/50 transition-colors"
+                >
+                  <div className="space-y-1 flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold">{lead.name}</h3>
+                      <Badge variant={lead.status === "new" ? "default" : "secondary"}>
+                        {lead.status}
+                      </Badge>
+                    </div>
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      {lead.email && <p>📧 {lead.email}</p>}
+                      <p>📱 {lead.phone}</p>
+                      {lead.budget && <p>💰 Budget: ₹{parseFloat(lead.budget).toLocaleString()}</p>}
+                      {lead.source && (
+                        <p>
+                          📍 Source:{" "}
+                          <span className="capitalize">{lead.source}</span>
+                        </p>
+                      )}
+                      {lead.metadata?.referralCode && (
+                        <p>
+                          🎫 Code:{" "}
+                          <span className="font-mono font-semibold">
+                            {lead.metadata.referralCode}
+                          </span>
+                        </p>
+                      )}
+                      {lead.notes && (
+                        <p className="mt-2 text-sm">
+                          <strong>Notes:</strong> {lead.notes}
+                        </p>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Submitted on {new Date(lead.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

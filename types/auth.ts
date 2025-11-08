@@ -18,6 +18,7 @@ export interface User {
   role: UserRole;
   emailVerified: boolean;
   avatar?: string | null;
+  referralCode?: string | null;
 }
 
 export interface AuthResponse {
