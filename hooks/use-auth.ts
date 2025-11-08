@@ -48,12 +48,19 @@ export function useSignup() {
       });
 
       // Redirect to saved path or dashboard
-      const redirectPath = 
-        typeof window !== "undefined" 
-          ? sessionStorage.getItem("redirectAfterLogin") || "/dashboard"
-          : "/dashboard";
+      let redirectPath = "/dashboard";
       
       if (typeof window !== "undefined") {
+        // Check for saved path from sessionStorage (client-side redirect)
+        const savedPath = sessionStorage.getItem("redirectAfterLogin");
+        
+        // Check for 'from' query parameter (middleware redirect)
+        const urlParams = new URLSearchParams(window.location.search);
+        const fromParam = urlParams.get('from');
+        
+        redirectPath = fromParam || savedPath || "/dashboard";
+        
+        // Clean up
         sessionStorage.removeItem("redirectAfterLogin");
       }
       
@@ -91,12 +98,19 @@ export function useLogin() {
       });
 
       // Redirect to saved path or dashboard
-      const redirectPath = 
-        typeof window !== "undefined" 
-          ? sessionStorage.getItem("redirectAfterLogin") || "/dashboard"
-          : "/dashboard";
+      let redirectPath = "/dashboard";
       
       if (typeof window !== "undefined") {
+        // Check for saved path from sessionStorage (client-side redirect)
+        const savedPath = sessionStorage.getItem("redirectAfterLogin");
+        
+        // Check for 'from' query parameter (middleware redirect)
+        const urlParams = new URLSearchParams(window.location.search);
+        const fromParam = urlParams.get('from');
+        
+        redirectPath = fromParam || savedPath || "/dashboard";
+        
+        // Clean up
         sessionStorage.removeItem("redirectAfterLogin");
       }
       

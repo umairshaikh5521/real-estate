@@ -15,7 +15,7 @@ class ApiError extends Error {
     public status: number,
     public code: string,
     message: string,
-    public details?: any
+    public details?: unknown
   ) {
     super(message);
     this.name = "ApiError";
@@ -84,7 +84,7 @@ class ApiClient {
       }
 
       return data;
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof ApiError) {
         throw error;
       }
@@ -113,7 +113,7 @@ class ApiClient {
    */
   async post<T>(
     endpoint: string,
-    data?: any,
+    data?: unknown,
     config?: RequestConfig
   ): Promise<T> {
     return this.request<T>(endpoint, {
@@ -128,7 +128,7 @@ class ApiClient {
    */
   async put<T>(
     endpoint: string,
-    data?: any,
+    data?: unknown,
     config?: RequestConfig
   ): Promise<T> {
     return this.request<T>(endpoint, {
