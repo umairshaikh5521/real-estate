@@ -27,7 +27,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       if (currentPath !== "/login") {
         sessionStorage.setItem("redirectAfterLogin", currentPath);
       }
-      router.push("/login");
+      
+      // Use replace instead of push to prevent back button issues
+      router.replace("/login");
     }
   }, [isAuthenticated, isLoading, router]);
 
