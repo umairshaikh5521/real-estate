@@ -64,7 +64,9 @@ export function useSignup() {
         sessionStorage.removeItem("redirectAfterLogin");
       }
       
-      router.push(redirectPath);
+      // Use window.location for hard redirect to ensure cookies are sent
+      // This is critical for production where middleware needs to read cookies
+      window.location.href = redirectPath;
     },
     onError: (error: any) => {
       const message =
