@@ -23,7 +23,10 @@ export function useSession() {
     queryKey: authKeys.session,
     queryFn: authService.getSession,
     retry: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 1 * 60 * 1000, // 1 minute (shorter cache)
+    gcTime: 2 * 60 * 1000, // Garbage collect after 2 minutes
+    refetchOnMount: 'always', // Always refetch on mount
+    refetchOnWindowFocus: true, // Refetch when window regains focus
   });
 }
 
