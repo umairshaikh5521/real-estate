@@ -50,7 +50,8 @@ vercel --prod
 In Vercel Dashboard → Your Frontend Project → Settings → Environment Variables:
 
 ```
-NEXT_PUBLIC_API_URL=https://your-backend.vercel.app
+BACKEND_API_URL=https://your-backend.vercel.app
+NEXT_PUBLIC_API_URL=
 ```
 
 ### Step 4: Deploy Frontend

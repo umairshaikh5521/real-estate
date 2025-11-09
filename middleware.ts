@@ -4,46 +4,50 @@
  * Provides the first layer of authentication protection
  */
 
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-// Define protected and public routes
-const protectedRoutes = [
-  '/dashboard',
-  '/leads',
-  '/bookings',
-  '/agents',
-  '/projects',
-]
+const protectedRoutes = ["/dashboard", "/leads", "/bookings", "/agents", "/projects"];
+const authRoutes = ["/login", "/signup"];
 
-const authRoutes = ['/login', '/signup']
-const publicRoutes = ['/', '/about', '/contact']
+const isRouteMatch = (pathname: string, route: string) => {
+  if (pathname === route) return true;
+  return pathname.startsWith(`${route}/`);
+};
+
+const getRedirectPath = (request: NextRequest) => {
+  const search = request.nextUrl.search;
+  return `${request.nextUrl.pathname}${search}`;
+};
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
-  
-  // NOTE: We can't check backend cookies here because they're on a different domain
-  // Backend cookies are httpOnly and set on the API domain (backend.vercel.app)
-  // Middleware runs on the frontend domain (frontend.vercel.app)
-  // 
-  // Authentication is handled client-side by ProtectedRoute component
-  // which calls the /api/auth/session endpoint to verify the user
-  
-  // Just pass through all requests - let client-side handle auth
-  return NextResponse.next()
+  const { pathname } = request.nextUrl;
+  const accessToken = request.cookies.get("accessToken")?.value;
+  const refreshToken = request.cookies.get("refreshToken")?.value;
+  const isAuthenticated = Boolean(accessToken || refreshToken);
+
+  const isProtectedRoute = protectedRoutes.some((route) =>
+    isRouteMatch(pathname, route)
+  );
+  const isAuthRoute = authRoutes.some((route) => isRouteMatch(pathname, route));
+
+  // Redirect unauthenticated users who try to access protected routes
+  if (isProtectedRoute && !isAuthenticated) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("from", getRedirectPath(request));
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Prevent authenticated users from accessing login/signup pages
+  if (isAuthRoute && isAuthenticated) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
+  return NextResponse.next();
 }
 
-// Configure which routes to run middleware on
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder files
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\..*|public).*)',
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\..*|public).*)",
   ],
-}
+};

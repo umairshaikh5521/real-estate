@@ -3,8 +3,12 @@
  * Centralized HTTP client for all API requests
  */
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const RAW_API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "").trim();
+const ABSOLUTE_URL_REGEX = /^https?:\/\//i;
+
+const isAbsoluteUrl = ABSOLUTE_URL_REGEX.test(RAW_API_BASE_URL);
+const RELATIVE_API_BASE_URL = isAbsoluteUrl ? "" : RAW_API_BASE_URL;
+const ABSOLUTE_API_BASE_URL = isAbsoluteUrl ? RAW_API_BASE_URL : "";
 
 interface RequestConfig extends RequestInit {
   params?: Record<string, string>;
@@ -27,24 +31,51 @@ class ApiError extends Error {
  */
 class ApiClient {
   private baseURL: string;
+  private absoluteBaseURL?: string;
 
-  constructor(baseURL: string) {
-    this.baseURL = baseURL;
+  constructor(baseURL: string, absoluteBaseURL?: string) {
+    this.baseURL = baseURL.replace(/\/$/, "");
+    this.absoluteBaseURL = absoluteBaseURL?.replace(/\/$/, "");
+  }
+
+  /**
+   * Resolve the base URL depending on environment.
+   * Browsers always use relative URLs to avoid CORS,
+   * while the server can fall back to an absolute URL.
+   */
+  private getActiveBaseURL(): string {
+    if (typeof window === "undefined" && this.absoluteBaseURL) {
+      return this.absoluteBaseURL;
+    }
+
+    return this.baseURL;
   }
 
   /**
    * Build full URL with query parameters
    */
   private buildURL(endpoint: string, params?: Record<string, string>): string {
-    const url = new URL(`${this.baseURL}${endpoint}`);
-    
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        url.searchParams.append(key, value);
-      });
+    const base = this.getActiveBaseURL();
+    const normalizedEndpoint = endpoint.startsWith("/")
+      ? endpoint
+      : `/${endpoint}`;
+
+    let urlString: string;
+
+    if (base && ABSOLUTE_URL_REGEX.test(base)) {
+      urlString = `${base}${normalizedEndpoint}`;
+    } else {
+      const relativeBase = base || "";
+      urlString = `${relativeBase}${normalizedEndpoint}` || normalizedEndpoint;
     }
-    
-    return url.toString();
+
+    if (!params || Object.keys(params).length === 0) {
+      return urlString;
+    }
+
+    const searchParams = new URLSearchParams(params);
+    const separator = urlString.includes("?") ? "&" : "?";
+    return `${urlString}${separator}${searchParams.toString()}`;
   }
 
   /**
@@ -150,7 +181,10 @@ class ApiClient {
 }
 
 // Export singleton instance
-export const apiClient = new ApiClient(API_BASE_URL);
+export const apiClient = new ApiClient(
+  RELATIVE_API_BASE_URL,
+  ABSOLUTE_API_BASE_URL || undefined
+);
 
 // Export error class for error handling
 export { ApiError };
