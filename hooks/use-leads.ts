@@ -43,7 +43,8 @@ export function useCreateLead() {
       queryClient.invalidateQueries({ queryKey: leadsKeys.lists() });
     },
     onError: (error: any) => {
-      const message = error?.message || "Failed to submit lead. Please try again.";
+      const message =
+        error?.message || "Failed to submit lead. Please try again.";
 
       toast.error("Submission failed", {
         description: message,
