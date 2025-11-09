@@ -5,7 +5,7 @@
  * Public landing page for real estate project with lead capture form
  */
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,7 +30,8 @@ const leadSchema = z.object({
 
 type LeadFormData = z.infer<typeof leadSchema>;
 
-export default function LandingPage() {
+// Component that uses search params - wrapped in Suspense
+function LandingPageContent() {
   const searchParams = useSearchParams();
   const createLead = useCreateLead();
   const [submitted, setSubmitted] = useState(false);
@@ -351,5 +352,18 @@ export default function LandingPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+// Main page component with Suspense boundary
+export default function LandingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    }>
+      <LandingPageContent />
+    </Suspense>
   );
 }
