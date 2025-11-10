@@ -83,7 +83,8 @@ class ApiClient {
    */
   private async request<T>(
     endpoint: string,
-    config: RequestConfig = {}
+    config: RequestConfig = {},
+    isRetry = false
   ): Promise<T> {
     const { params, ...fetchConfig } = config;
 
@@ -106,6 +107,25 @@ class ApiClient {
 
       // Handle error responses
       if (!response.ok) {
+        // If we get a 401 (Unauthorized) and haven't retried yet, try to refresh the token
+        if (response.status === 401 && !isRetry && endpoint !== '/api/auth/refresh' && endpoint !== '/api/auth/login' && endpoint !== '/api/auth/signup') {
+          try {
+            // Try to refresh the token
+            await this.post('/api/auth/refresh');
+            
+            // Retry the original request
+            return this.request<T>(endpoint, config, true);
+          } catch (refreshError) {
+            // If refresh fails, throw the original 401 error
+            throw new ApiError(
+              response.status,
+              data.error?.code || "UNAUTHORIZED",
+              data.error?.message || "Session expired",
+              data.error?.details
+            );
+          }
+        }
+        
         throw new ApiError(
           response.status,
           data.error?.code || "UNKNOWN_ERROR",
