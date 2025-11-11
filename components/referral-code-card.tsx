@@ -6,7 +6,13 @@
  */
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Copy, Check, Share2 } from "lucide-react";
 import { toast } from "sonner";
@@ -15,18 +21,18 @@ import { useSession } from "@/hooks/use-auth";
 export function ReferralCodeCard() {
   const { data } = useSession();
   const [copied, setCopied] = useState(false);
-  
+
   const user = data?.data?.user;
   const referralCode = user?.referralCode;
 
   const handleCopy = async () => {
     if (!referralCode) return;
-    
+
     try {
       await navigator.clipboard.writeText(referralCode);
       setCopied(true);
       toast.success("Referral code copied to clipboard!");
-      
+
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       toast.error("Failed to copy code");
@@ -37,7 +43,7 @@ export function ReferralCodeCard() {
     if (!referralCode) return;
 
     const shareText = `Use my referral code ${referralCode} when you inquire about properties!`;
-    
+
     if (navigator.share) {
       try {
         await navigator.share({
@@ -69,46 +75,47 @@ export function ReferralCodeCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="flex-1 p-4 bg-primary/10 rounded-lg border-2 border-primary/20">
-            <p className="text-3xl font-bold text-primary text-center tracking-wider">
-              {referralCode}
-            </p>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex-1 p-4 bg-primary/10 rounded-lg border-2 border-primary/20">
+              <p className="text-xl font-bold  text-center tracking-wider">
+                {referralCode}
+              </p>
+            </div>
           </div>
-        </div>
-        
-        <div className="flex gap-2">
-          <Button
-            onClick={handleCopy}
-            variant="outline"
-            className="flex-1"
-            disabled={copied}
-          >
-            {copied ? (
-              <>
-                <Check className="mr-2 h-4 w-4" />
-                Copied!
-              </>
-            ) : (
-              <>
-                <Copy className="mr-2 h-4 w-4" />
-                Copy Code
-              </>
-            )}
-          </Button>
-          
-          <Button
-            onClick={handleShare}
-            variant="default"
-            className="flex-1"
-          >
-            <Share2 className="mr-2 h-4 w-4" />
-            Share
-          </Button>
+
+          <div className="flex gap-2">
+            <Button
+              onClick={handleCopy}
+              variant="outline"
+              className="flex-1"
+              disabled={copied}
+            >
+              {copied ? (
+                <>
+                  <Check className="lg:mr-2 h-4 w-4" />
+                  <span className="hidden lg:inline"> Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="lg:mr-2 h-4 w-4" />
+                  <span className="hidden lg:inline"> Copy Code</span>
+                </>
+              )}
+            </Button>
+
+            <Button onClick={handleShare} variant="default" className="flex-1">
+              <Share2 className="lg:mr-2 h-4 w-4" />
+              <span className="hidden lg:inline"> Share</span>
+            </Button>
+          </div>
         </div>
 
         <div className="text-xs text-muted-foreground mt-2">
-          <p>💡 <strong>Tip:</strong> When a homebuyer uses your code, their inquiry will be assigned to you automatically.</p>
+          <p>
+            💡 <strong>Tip:</strong> When a homebuyer uses your code, their
+            inquiry will be assigned to you automatically.
+          </p>
         </div>
       </CardContent>
     </Card>

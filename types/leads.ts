@@ -32,6 +32,15 @@ export interface CreateLeadRequest {
   notes?: string;
 }
 
+export interface UpdateLeadRequest {
+  name?: string;
+  email?: string;
+  phone?: string;
+  status?: "new" | "contacted" | "qualified" | "site_visit" | "negotiation" | "converted" | "lost";
+  budget?: string;
+  notes?: string;
+}
+
 export interface LeadsResponse {
   success: boolean;
   data: {
@@ -41,6 +50,14 @@ export interface LeadsResponse {
 }
 
 export interface CreateLeadResponse {
+  success: boolean;
+  data: {
+    lead: Lead;
+    message: string;
+  };
+}
+
+export interface UpdateLeadResponse {
   success: boolean;
   data: {
     lead: Lead;

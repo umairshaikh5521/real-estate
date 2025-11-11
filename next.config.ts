@@ -16,6 +16,16 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  images: {
+    // Allow loading images from the Supabase project hostname
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "nulddnfkwqdgckditijz.supabase.co",
+        pathname: "/**",
+      },
+    ],
+  },
 };
 
 export default nextConfig;

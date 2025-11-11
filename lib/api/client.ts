@@ -40,14 +40,15 @@ class ApiClient {
 
   /**
    * Resolve the base URL depending on environment.
-   * Browsers always use relative URLs to avoid CORS,
-   * while the server can fall back to an absolute URL.
+   * Use absolute URL if available (for both browser and server).
    */
   private getActiveBaseURL(): string {
-    if (typeof window === "undefined" && this.absoluteBaseURL) {
+    // Use absolute URL if available (e.g., http://localhost:8000)
+    if (this.absoluteBaseURL) {
       return this.absoluteBaseURL;
     }
 
+    // Fallback to relative URL (for same-origin requests)
     return this.baseURL;
   }
 

@@ -10,6 +10,9 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/ui/stat-card";
+import { ReferralCodeCard } from "@/components/referral-code-card";
+import { useSession } from "@/hooks/use-auth";
+import { UserRole } from "@/types/auth";
 import {
   DownloadIcon,
   BarChart3Icon,
@@ -22,6 +25,10 @@ import {
 export default function Page() {
   const [selectedReport, setSelectedReport] = useState("business-overview");
   const [selectedTimeframe, setSelectedTimeframe] = useState("this-month");
+  
+  const { data: sessionData } = useSession();
+  const user = sessionData?.data?.user;
+  const isChannelPartner = user?.role === UserRole.CHANNEL_PARTNER;
 
   const statsData = [
     {
@@ -124,7 +131,15 @@ export default function Page() {
           </Button>
         </div>
       </div>
-      {/* ---Stats Cards ---- */}
+
+      {/* Referral Code Card for Channel Partners */}
+      {isChannelPartner && (
+        <div className="mb-6">
+          <ReferralCodeCard />
+        </div>
+      )}
+
+      {/* Stats Cards */}
       <div className="flex flex-1 flex-col gap-4 ">
         <div className="grid auto-rows-min gap-4 md:grid-cols-4">
           {statsData.map((stat, index) => (

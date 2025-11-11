@@ -24,6 +24,7 @@ import {
   MapPin,
   Calendar,
   Pencil,
+  Loader2,
 } from "lucide-react";
 import { columns } from "./columns";
 import { mockProjectsData } from "./data";
@@ -31,29 +32,88 @@ import { Project } from "@/types";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { AddProjectDialog } from "./components/add-project-dialog";
+import { useProjects } from "@/hooks/use-projects";
+import type { Project as APIProject } from "@/types/projects";
+
+// Helper functions
+function mapAPIStatus(status: string): Project["status"] {
+  const statusMap: Record<string, Project["status"]> = {
+    planning: "Upcoming",
+    active: "Under Construction",
+    completed: "Completed",
+    "on-hold": "Upcoming",
+  };
+  return statusMap[status] || "Upcoming";
+}
+
+function formatPriceRange(min?: string | null, max?: string | null): string {
+  if (!min && !max) return "TBD";
+  if (min && max) {
+    const minCr = (parseFloat(min) / 10000000).toFixed(1);
+    const maxCr = (parseFloat(max) / 10000000).toFixed(1);
+    return `₹${minCr}Cr - ₹${maxCr}Cr`;
+  }
+  if (min) {
+    const minCr = (parseFloat(min) / 10000000).toFixed(1);
+    return `From ₹${minCr}Cr`;
+  }
+  return "TBD";
+}
+
+function calculateCompletion(status: string): number {
+  const completionMap: Record<string, number> = {
+    planning: 0,
+    active: 50,
+    completed: 100,
+    "on-hold": 25,
+  };
+  return completionMap[status] || 0;
+}
 
 export default function Page() {
   const [view, setView] = useState<"table" | "grid">("table");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [projectsData, setProjectsData] = useState<Project[]>(mockProjectsData);
 
-  const handleAddProject = (
-    newProject: Omit<Project, "id" | "soldUnits" | "unitStatus">
-  ) => {
-    const project: Project = {
-      ...newProject,
-      id: `project-${Date.now()}`,
-      soldUnits: 0,
-      unitStatus: `${newProject.availableUnits} Available, 0 Sold`,
-    };
-    setProjectsData((prev) => [...prev, project]);
-  };
+  // Fetch dynamic projects from API
+  const { data: apiResponse, isLoading } = useProjects();
+
+  // Transform API projects to match UI Project type
+  const transformedAPIProjects: Project[] = useMemo(() => {
+    if (!apiResponse?.data) return [];
+
+    return apiResponse.data.map((project: APIProject) => {
+      const soldUnits = project.totalUnits - project.availableUnits;
+      
+      return {
+        id: project.id,
+        name: project.name,
+        location: project.location,
+        developer: "Your Company", // Default value
+        type: project.images?.[0] ? "Apartments" : "Apartments", // Default type
+        status: mapAPIStatus(project.status),
+        totalUnits: project.totalUnits,
+        availableUnits: project.availableUnits,
+        soldUnits,
+        unitStatus: `${project.availableUnits} Available, ${soldUnits} Sold`,
+        priceRange: formatPriceRange(project.priceRangeMin, project.priceRangeMax),
+        completion: calculateCompletion(project.status),
+        expectedCompletion: "TBD", // Can be added to backend later
+        amenities: project.amenities || [],
+        image: project.images?.[0] || "/placeholder-project.jpg",
+      } as Project;
+    });
+  }, [apiResponse]);
+
+  // Merge dynamic projects with static projects (dynamic on top)
+  const allProjects = useMemo(() => {
+    return [...transformedAPIProjects, ...mockProjectsData];
+  }, [transformedAPIProjects]);
 
   // Filter data based on current filters
   const filteredData = useMemo(() => {
-    return projectsData.filter((project) => {
+    return allProjects.filter((project) => {
       const matchesStatus =
         statusFilter === "all" || project.status === statusFilter;
       const matchesType = typeFilter === "all" || project.type === typeFilter;
@@ -64,7 +124,7 @@ export default function Page() {
 
       return matchesStatus && matchesType && matchesSearch;
     });
-  }, [projectsData, statusFilter, typeFilter, searchQuery]);
+  }, [allProjects, statusFilter, typeFilter, searchQuery]);
 
   const statusOptions = [
     { label: "All Status", value: "all" },
@@ -158,7 +218,7 @@ export default function Page() {
               <Grid3X3 className="h-4 w-4" />
             </Button>
           </div>
-          <AddProjectDialog onProjectAdd={handleAddProject}>
+          <AddProjectDialog>
             <Button variant="accent" size={"lg"} className="ml-auto">
               <Plus className="size-4" />
               Add New Project
@@ -187,7 +247,7 @@ export default function Page() {
       {view === "table" ? (
         <DataTable
           columns={columns}
-          data={projectsData}
+          data={filteredData}
           searchableColumns={[
             {
               id: "name",

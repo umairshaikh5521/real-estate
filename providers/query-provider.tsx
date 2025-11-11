@@ -17,14 +17,24 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            // Default query options
-            staleTime: 60 * 1000, // 1 minute
-            refetchOnWindowFocus: false,
-            retry: 1,
+            // Production-grade query configuration
+            staleTime: 30 * 1000, // 30 seconds - data considered fresh for this duration
+            gcTime: 5 * 60 * 1000, // 5 minutes - unused data cached for this long (formerly cacheTime)
+            refetchOnWindowFocus: true, // Refetch when user returns to tab (good UX)
+            refetchOnReconnect: true, // Refetch when network reconnects
+            retry: 2, // Retry failed requests twice
+            retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+            networkMode: "online", // Only fetch when online
           },
           mutations: {
-            // Default mutation options
-            retry: 0,
+            // Mutation options
+            retry: 1, // Retry once on failure for mutations
+            retryDelay: 1000,
+            networkMode: "online",
+            // Global error handler for mutations (optional)
+            onError: (error) => {
+              console.error("Mutation error:", error);
+            },
           },
         },
       })

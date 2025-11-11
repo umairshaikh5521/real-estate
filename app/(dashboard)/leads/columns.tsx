@@ -3,7 +3,6 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,93 +13,52 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   MoreHorizontal,
-  Facebook,
-  Users,
-  Globe,
-  Megaphone,
-  Calendar,
-  Footprints,
 } from "lucide-react";
 import { DataTableColumnHeader } from "@/components/data-table";
-import { Lead } from "@/types";
+import { Lead } from "@/types/leads";
 import { cn } from "@/lib/utils";
 
 const getStatusBadgeColor = (status: string) => {
   switch (status) {
-    case "New":
-      return "bg-blue-50 text-blue-600 border-blue-200";
-    case "Contacted":
+    case "new":
+      return "badge-blue";
+    case "contacted":
       return "badge-indigo";
-    case "Site Visit":
+    case "qualified":
       return "badge-purple";
-    case "Negotiation":
+    case "site_visit":
       return "badge-yellow";
-    case "Booked":
+    case "negotiation":
+      return "badge-orange";
+    case "converted":
       return "badge-green";
-    case "Lost":
+    case "lost":
       return "badge-red";
     default:
       return "";
   }
 };
 
-const getScoreColor = (score: number) => {
-  if (score >= 9) return "badge-red";
-  if (score >= 7) return "badge-orange";
-  if (score >= 5) return "badge-yellow";
-  if (score >= 0) return "badge-green";
-  return "badge-gray";
-};
-
-const getSourceIcon = (source: string) => {
-  switch (source) {
-    case "Facebook":
-      return Facebook;
-    case "Expo":
-      return Calendar;
-    case "Referral":
-      return Users;
-    case "Website":
-      return Globe;
-    case "Walkin":
-      return Footprints;
-    case "Campaign":
-      return Megaphone;
-    default:
-      return Users;
-  }
-};
-
 export const columns: ColumnDef<Lead>[] = [
   {
-    accessorKey: "name",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Lead Identity" />
-    ),
+    id: "serial",
+    header: () => <div className="text-center">#</div>,
     cell: ({ row }) => (
-      <div>
-        <div className="font-medium">{row.getValue("name")}</div>
-        <div className="text-sm text-muted-foreground">
-          ID: {row.original.id}
-        </div>
+      <div className="text-center text-muted-foreground font-medium">
+        {row.index + 1}
       </div>
     ),
   },
   {
-    accessorKey: "leadSource",
+    accessorKey: "name",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Lead Source" />
+      <DataTableColumnHeader column={column} title="Lead Name" />
     ),
-    cell: ({ row }) => {
-      const source = row.getValue("leadSource") as string;
-      const IconComponent = getSourceIcon(source);
-      return (
-        <div className="flex items-center gap-2">
-          <IconComponent className="h-4 w-4 text-gray-500" />
-          <span className="font-medium">{source}</span>
-        </div>
-      );
-    },
+    cell: ({ row }) => (
+      <div>
+        <div className="font-medium">{row.getValue("name")}</div>
+      </div>
+    ),
   },
   {
     accessorKey: "phone",
@@ -110,61 +68,100 @@ export const columns: ColumnDef<Lead>[] = [
     cell: ({ row }) => (
       <div>
         <div className="font-medium">{row.getValue("phone")}</div>
-        <div className="text-sm text-muted-foreground">
-          {row.original.email}
-        </div>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "projectInterested",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Project Interested" />
-    ),
-    cell: ({ row }) => (
-      <div>
-        <div className="font-medium">{row.getValue("projectInterested")}</div>
-        {row.original.unitDetails && (
+        {row.original.email && (
           <div className="text-sm text-muted-foreground">
-            • {row.original.unitDetails}
+            {row.original.email}
           </div>
         )}
       </div>
     ),
   },
   {
+    accessorKey: "source",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Source" />
+    ),
+    cell: ({ row }) => {
+      const source = row.getValue("source") as string;
+      if (!source) return <span className="text-muted-foreground">-</span>;
+      return (
+        <div className="flex items-center gap-2">
+          <span className="font-medium capitalize">{source}</span>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "budget",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Budget" />
+    ),
+    cell: ({ row }) => {
+      const budget = row.getValue("budget") as string | null;
+      if (!budget) return <span className="text-muted-foreground">-</span>;
+      
+      const amount = parseFloat(budget);
+      let formatted = "";
+      if (amount >= 10000000) {
+        formatted = `₹${(amount / 10000000).toFixed(1)}Cr`;
+      } else if (amount >= 100000) {
+        formatted = `₹${(amount / 100000).toFixed(1)}L`;
+      } else {
+        formatted = `₹${amount.toLocaleString()}`;
+      }
+      
+      return <div className="font-medium">{formatted}</div>;
+    },
+  },
+  {
     accessorKey: "status",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Status" />
     ),
-    cell: ({ row }) => (
-      <Badge
-        variant="outline"
-        className={cn(
-          "font-medium",
-          getStatusBadgeColor(row.getValue("status"))
-        )}
-      >
-        {row.getValue("status")}
-      </Badge>
-    ),
+    cell: ({ row }) => {
+      const status = row.getValue("status") as string;
+      const getLabel = (s: string) => {
+        return s.split("_").map(word => 
+          word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(" ");
+      };
+      
+      return (
+        <Badge
+          variant="outline"
+          className={cn(
+            "font-medium",
+            getStatusBadgeColor(status)
+          )}
+        >
+          {getLabel(status)}
+        </Badge>
+      );
+    },
   },
   {
-    accessorKey: "leadScore",
+    accessorKey: "createdAt",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Lead Score" />
+      <DataTableColumnHeader column={column} title="Created" />
     ),
     cell: ({ row }) => {
-      const score = row.getValue("leadScore") as number;
+      const date = new Date(row.getValue("createdAt"));
+      const now = new Date();
+      const diffTime = Math.abs(now.getTime() - date.getTime());
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      
+      let timeAgo = "";
+      if (diffDays === 0) timeAgo = "Today";
+      else if (diffDays === 1) timeAgo = "Yesterday";
+      else if (diffDays < 7) timeAgo = `${diffDays} days ago`;
+      else if (diffDays < 30) timeAgo = `${Math.floor(diffDays / 7)} weeks ago`;
+      else timeAgo = `${Math.floor(diffDays / 30)} months ago`;
+      
       return (
-        <div className="flex items-center justify-center">
-          <div
-            className={cn(
-              "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
-              getScoreColor(score)
-            )}
-          >
-            {score}
+        <div>
+          <div className="font-medium">{timeAgo}</div>
+          <div className="text-xs text-muted-foreground">
+            {date.toLocaleDateString()}
           </div>
         </div>
       );
@@ -172,9 +169,14 @@ export const columns: ColumnDef<Lead>[] = [
   },
   {
     id: "actions",
-    header: "Action",
-    cell: ({ row }) => {
+    header: "Actions",
+    cell: ({ row, table }) => {
       const lead = row.original;
+      const meta = table.options.meta as { 
+        onEdit?: (lead: Lead) => void;
+        onScheduleFollowUp?: (lead: Lead) => void;
+        onViewDetails?: (lead: Lead) => void;
+      } | undefined;
 
       return (
         <DropdownMenu>
@@ -186,19 +188,34 @@ export const columns: ColumnDef<Lead>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            {meta?.onEdit && (
+              <DropdownMenuItem onClick={() => meta.onEdit?.(lead)}>
+                Edit lead
+              </DropdownMenuItem>
+            )}
+            {meta?.onScheduleFollowUp && (
+              <DropdownMenuItem onClick={() => meta.onScheduleFollowUp?.(lead)}>
+                Follow-ups
+              </DropdownMenuItem>
+            )}
+            {meta?.onViewDetails && (
+              <DropdownMenuItem onClick={() => meta.onViewDetails?.(lead)}>
+                View details
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(lead.id)}
+              onClick={() => navigator.clipboard.writeText(lead.phone)}
             >
-              Copy lead ID
+              Copy phone number
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>View lead details</DropdownMenuItem>
-            <DropdownMenuItem>Edit lead</DropdownMenuItem>
-            <DropdownMenuItem>Schedule follow-up</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-600">
-              Delete lead
-            </DropdownMenuItem>
+            {lead.email && (
+              <DropdownMenuItem
+                onClick={() => navigator.clipboard.writeText(lead.email!)}
+              >
+                Copy email
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       );
